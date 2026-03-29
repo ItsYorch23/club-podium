@@ -2,12 +2,19 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState } from "react";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import HeroCanvas from "@/components/HeroCanvas";
 import Footer from "@/components/Footer";
 
 // ─── Types ───────────────────────────────────────────────
-interface Court { id: string; title: string; description: string; tag: string; icon: React.ReactNode; }
+interface Court {
+  id: string;
+  title: string;
+  description: string;
+  imgDay: string;
+  imgNeon: string;
+}
 interface Stat { id: string; number: string; label: string; description: string; }
 interface Step { id: string; num: string; title: string; description: string; }
 interface Torneo { id: string; name: string; date: string; categories: string[]; prize: string; status: "proximo" | "inscripcion" | "finalizado"; }
@@ -17,49 +24,29 @@ interface Resultado { id: string; torneo: string; campeon: string; subcampeon: s
 // ─── Data ────────────────────────────────────────────────
 const courts: Court[] = [
   {
-    id: "court-indoor", title: "Pistas Indoor", tag: "Todo el año",
-    description: "Climatizadas y con iluminación profesional para jugar todo el año sin importar el clima.",
-    icon: (
-      <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-        <rect x="3" y="10" width="22" height="15" rx="2" stroke="#1a56db" strokeWidth="1.8" />
-        <path d="M3 14h22" stroke="#1a56db" strokeWidth="1.3" strokeOpacity="0.4" />
-        <path d="M14 10v15" stroke="#1a56db" strokeWidth="1.3" strokeOpacity="0.4" />
-        <path d="M1 10l13-7 13 7" stroke="#CCFF00" strokeWidth="1.8" strokeLinejoin="round" />
-        <circle cx="14" cy="17" r="3" stroke="#CCFF00" strokeWidth="1.5" />
-      </svg>
-    ),
+    id: "cancha-1",
+    title: "Cancha 1",
+    description: "Cancha oficial del recinto Club Podium. Iluminación profesional para jugar de día y de noche.",
+    imgDay: "/canchas/cancha1-dia.png",
+    imgNeon: "/canchas/cancha1-neon.png",
   },
   {
-    id: "court-outdoor", title: "Pistas Outdoor", tag: "Panorámicas",
-    description: "Césped artificial de última generación y cristal panorámico con vistas al complejo.",
-    icon: (
-      <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="9" r="5" stroke="#CCFF00" strokeWidth="1.8" />
-        <path d="M14 14v3" stroke="#CCFF00" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M4 24c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="#1a56db" strokeWidth="1.8" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    id: "court-training", title: "Zona Entrenamiento", tag: "Certificado",
-    description: "Clases con entrenadores certificados y tecnología de análisis de juego en tiempo real.",
-    icon: (
-      <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-        <path d="M4 22L12 8l4 8 3-4 5 10" stroke="#1a56db" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="22" cy="7" r="3" stroke="#CCFF00" strokeWidth="1.8" />
-      </svg>
-    ),
+    id: "cancha-2",
+    title: "Cancha 2",
+    description: "Segunda cancha oficial del recinto Club Podium. Mismo estándar profesional, disponible para reserva.",
+    imgDay: "/canchas/cancha2-dia.png",
+    imgNeon: "/canchas/cancha2-neon.png",
   },
 ];
 
 const stats: Stat[] = [
-  { id: "s1", number: "12", label: "Pistas profesionales", description: "Indoor y outdoor de alto rendimiento" },
+  { id: "s1", number: "2", label: "Canchas oficiales", description: "Cancha 1 y Cancha 2 disponibles" },
   { id: "s2", number: "3K+", label: "Jugadores activos", description: "Comunidad creciente en Ocaña" },
   { id: "s3", number: "20", label: "Torneos al año", description: "Competición de todos los niveles" },
 ];
 
 const steps: Step[] = [
-  { id: "st1", num: "01", title: "Reserva tu pista", description: "Elige horario en segundos por WhatsApp o app." },
+  { id: "st1", num: "01", title: "Reserva tu cancha", description: "Elige horario en segundos por WhatsApp o app." },
   { id: "st2", num: "02", title: "Llega al club", description: "Acceso rápido, vestuarios premium listos." },
   { id: "st3", num: "03", title: "Juega y mejora", description: "Entrena o compite con análisis en directo." },
   { id: "st4", num: "04", title: "Vive el pádel", description: "Torneos, comunidad y competición federada." },
@@ -115,7 +102,7 @@ const fadeIn = {
   visible: (d: number = 0) => ({ opacity: 1, transition: { duration: 0.65, ease: "easeOut", delay: d } }),
 };
 
-// ─── Helpers ──────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────
 function GridLines() {
   return (
     <div className="absolute inset-0 pointer-events-none" style={{
@@ -149,18 +136,166 @@ function SectionLabel({ num, label }: { num: string; label: string }) {
   );
 }
 
+// ─── Court Card con toggle día/neon ──────────────────────
+function CourtCard({ court, index }: { court: Court; index: number }) {
+  const [isNeon, setIsNeon] = useState(false);
+
+  return (
+    <motion.div
+      className="relative rounded-2xl overflow-hidden flex flex-col"
+      style={{ backgroundColor: "#0d1e38", border: "1px solid rgba(0,56,168,0.25)" }}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-60px" }}
+      custom={index * 0.12}
+      variants={fadeUp}
+    >
+      {/* ── Foto con transición día/neon ── */}
+      <div className="relative w-full overflow-hidden" style={{ height: "240px" }}>
+
+        {/* Imagen de día */}
+        <div
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{ opacity: isNeon ? 0 : 1, zIndex: 1 }}
+        >
+          <Image
+            src={court.imgDay}
+            alt={`${court.title} día`}
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
+
+        {/* Imagen de neon */}
+        <div
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{ opacity: isNeon ? 1 : 0, zIndex: 2 }}
+        >
+          <Image
+            src={court.imgNeon}
+            alt={`${court.title} neon`}
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
+
+        {/* Overlay gradiente bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none z-10"
+          style={{ background: "linear-gradient(to top, #0d1e38, transparent)" }} />
+
+        {/* Badge modo activo */}
+        <div className="absolute top-3 left-3 z-10">
+          <span
+            className="text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider"
+            style={{
+              fontFamily: "var(--font-dm-sans)",
+              backgroundColor: isNeon ? "rgba(0,240,255,0.15)" : "rgba(204,255,0,0.15)",
+              color: isNeon ? "#00f0ff" : "#CCFF00",
+              border: `1px solid ${isNeon ? "rgba(0,240,255,0.4)" : "rgba(204,255,0,0.4)"}`,
+              transition: "all 0.4s ease",
+            }}
+          >
+            {isNeon ? "⚡ Neon" : "☀ Día"}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Contenido ── */}
+      <div className="p-8 flex flex-col gap-4 flex-1">
+        {/* Número + título */}
+        <div className="flex items-start justify-between">
+          <div>
+            <span className="text-5xl font-bold select-none block leading-none mb-2"
+              style={{ fontFamily: "var(--font-playfair)", color: "rgba(0,56,168,0.25)" }}>
+              {index + 1}
+            </span>
+            <h3 className="text-white text-2xl" style={{ fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
+              {court.title}
+            </h3>
+          </div>
+
+          {/* ── Toggle día / neon ── */}
+          <button
+            onClick={() => setIsNeon(!isNeon)}
+            className="flex items-center gap-2 rounded-full px-4 py-2 transition-all duration-300 flex-shrink-0"
+            style={{
+              backgroundColor: isNeon ? "rgba(0,240,255,0.1)" : "rgba(204,255,0,0.08)",
+              border: `1px solid ${isNeon ? "rgba(0,240,255,0.35)" : "rgba(204,255,0,0.3)"}`,
+            }}
+          >
+            {/* Track */}
+            <div className="relative w-10 h-5 rounded-full transition-all duration-300"
+              style={{ backgroundColor: isNeon ? "rgba(0,240,255,0.3)" : "rgba(204,255,0,0.2)" }}>
+              <motion.div
+                className="absolute top-0.5 w-4 h-4 rounded-full"
+                animate={{ left: isNeon ? "calc(100% - 18px)" : "2px" }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                style={{ backgroundColor: isNeon ? "#00f0ff" : "#CCFF00" }}
+              />
+            </div>
+            <span style={{
+              fontFamily: "var(--font-dm-sans)",
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              color: isNeon ? "#00f0ff" : "#CCFF00",
+              transition: "color 0.3s ease",
+            }} className="uppercase">
+              {isNeon ? "Neon" : "Día"}
+            </span>
+          </button>
+        </div>
+
+        <p className="text-sm leading-relaxed" style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
+          {court.description}
+        </p>
+
+        {/* Neon tag extra */}
+        {isNeon && (
+          <motion.p
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-xs leading-relaxed"
+            style={{ fontFamily: "var(--font-dm-sans)", color: "rgba(0,240,255,0.6)" }}
+          >
+            ⚡ Modo neon activo — pádel con luces de neón para una experiencia única de noche.
+          </motion.p>
+        )}
+
+        {/* CTA */}
+        <motion.a
+          href="#reservas"
+          className="mt-auto inline-flex items-center gap-2 text-xs uppercase tracking-widest pt-4"
+          style={{
+            fontFamily: "var(--font-dm-sans)",
+            color: isNeon ? "#00f0ff" : "#CCFF00",
+            borderTop: `1px solid ${isNeon ? "rgba(0,240,255,0.15)" : "rgba(204,255,0,0.1)"}`,
+            transition: "color 0.4s ease, border-color 0.4s ease",
+          }}
+          whileHover={{ x: 5 }}
+          transition={{ duration: 0.2 }}
+        >
+          <span>Reservar {court.title}</span><span>→</span>
+        </motion.a>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────
 export default function Home() {
   const statsRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: statsRef, offset: ["start end", "end start"] });
   const statsY = useTransform(scrollYProgress, [0, 1], [30, -30]);
 
-  const [formData, setFormData] = useState({ nombre: "", telefono: "", fecha: "", pista: "", mensaje: "" });
+  const [formData, setFormData] = useState({ nombre: "", telefono: "", fecha: "", cancha: "", turno: "", mensaje: "" });
   const [formSent, setFormSent] = useState(false);
 
   const handleSubmit = (e: React.MouseEvent) => {
     e.preventDefault();
-    const msg = `Hola Club Podium! Me llamo ${formData.nombre}, quiero reservar una pista el ${formData.fecha}. Pista: ${formData.pista}. ${formData.mensaje}`;
+    const msg = `Hola Club Podium! Me llamo ${formData.nombre}, quiero reservar la ${formData.cancha} el ${formData.fecha} en el turno ${formData.turno}. ${formData.mensaje}`;
     window.open(`https://wa.me/message/TNQRBXWZJWAML1?text=${encodeURIComponent(msg)}`, "_blank");
     setFormSent(true);
   };
@@ -175,6 +310,7 @@ export default function Home() {
       <section id="instalaciones" className="relative py-32 px-6 md:px-12 overflow-hidden" style={{ backgroundColor: "#0a1628" }}>
         <GridLines />
         <GlowBlue className="w-[500px] h-[500px] -top-32 -left-32" />
+
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-20 gap-6">
             <div>
@@ -182,49 +318,20 @@ export default function Home() {
               <motion.h2 className="text-6xl md:text-7xl leading-[1.0]"
                 style={{ fontFamily: "var(--font-playfair)", fontWeight: 800, color: "#FFFFFF" }}
                 initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeUp}>
-                Nuestras<br /><em style={{ color: "#CCFF00" }}>pistas.</em>
+                Nuestras<br /><em style={{ color: "#CCFF00" }}>canchas.</em>
               </motion.h2>
             </div>
             <motion.p className="max-w-xs text-sm leading-relaxed md:text-right"
               style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn} custom={0.2}>
-              Instalaciones diseñadas para jugadores que exigen lo mejor. Cada detalle pensado para tu rendimiento.
+              El recinto Club Podium cuenta con 2 canchas profesionales. Activa el modo <span style={{ color: "#00f0ff" }}>⚡ Neon</span> para ver cómo se ven de noche.
             </motion.p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px rounded-2xl overflow-hidden"
-            style={{ border: "1px solid rgba(0,56,168,0.3)", backgroundColor: "rgba(0,56,168,0.08)" }}>
+
+          {/* 2 Court Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {courts.map((court, i) => (
-              <motion.div key={court.id} className="relative p-10 group cursor-default"
-                style={{ backgroundColor: "#0a1628" }}
-                initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}
-                custom={i * 0.12} variants={fadeUp}>
-                <motion.div className="absolute inset-0 pointer-events-none"
-                  style={{ background: "radial-gradient(circle at 40% 30%, rgba(0,56,168,0.18), transparent 65%)" }}
-                  initial={{ opacity: 0 }} whileHover={{ opacity: 1 }} transition={{ duration: 0.35 }} />
-                <motion.div className="absolute top-0 left-8 right-8 h-[2px]"
-                  style={{ background: "linear-gradient(to right, transparent, #CCFF00, transparent)" }}
-                  initial={{ scaleX: 0, opacity: 0 }} whileHover={{ scaleX: 1, opacity: 1 }} transition={{ duration: 0.35 }} />
-                <div className="mb-8 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: "rgba(0,56,168,0.25)", border: "1px solid rgba(0,56,168,0.4)" }}>
-                    {court.icon}
-                  </div>
-                  <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.2em", color: "#CCFF00", opacity: 0.75 }} className="uppercase">
-                    {court.tag}
-                  </span>
-                </div>
-                <h3 className="text-white text-2xl mb-4" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
-                  {court.title}
-                </h3>
-                <p className="text-sm leading-relaxed" style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
-                  {court.description}
-                </p>
-                <motion.div className="mt-8 flex items-center gap-2 text-xs uppercase tracking-widest"
-                  style={{ fontFamily: "var(--font-dm-sans)", color: "#1a56db" }}
-                  whileHover={{ x: 5 }} transition={{ duration: 0.2 }}>
-                  <span>Ver más</span><span>→</span>
-                </motion.div>
-              </motion.div>
+              <CourtCard key={court.id} court={court} index={i} />
             ))}
           </div>
         </div>
@@ -262,15 +369,11 @@ export default function Home() {
 
       <Divider />
 
-      {/* ══════════════════════════════════════════
-          ── TORNEOS ──
-      ══════════════════════════════════════════ */}
+      {/* ── TORNEOS ── */}
       <section id="torneos" className="relative py-32 px-6 md:px-12 overflow-hidden" style={{ backgroundColor: "#0a1628" }}>
         <GridLines />
         <GlowBlue className="w-[600px] h-[600px] -top-40 right-0 translate-x-1/3" />
-
         <div className="max-w-6xl mx-auto relative z-10">
-          {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-20 gap-6">
             <div>
               <SectionLabel num="02" label="Torneos" />
@@ -287,19 +390,16 @@ export default function Home() {
             </motion.p>
           </div>
 
-          {/* Próximos torneos */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {torneos.map((torneo, i) => {
               const s = statusConfig[torneo.status];
               return (
                 <motion.div key={torneo.id}
-                  className="relative rounded-2xl p-8 flex flex-col gap-4 overflow-hidden group"
+                  className="relative rounded-2xl p-8 flex flex-col gap-4 overflow-hidden"
                   style={{ backgroundColor: "#0d1e38", border: "1px solid rgba(0,56,168,0.25)" }}
                   initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}
                   custom={i * 0.12} variants={fadeUp}
                   whileHover={{ y: -4, transition: { duration: 0.25 } }}>
-
-                  {/* Status badge */}
                   <div className="flex items-center justify-between">
                     <span className="text-xs uppercase tracking-widest px-3 py-1 rounded-full font-bold"
                       style={{ fontFamily: "var(--font-dm-sans)", color: s.color, backgroundColor: s.bg }}>
@@ -309,13 +409,9 @@ export default function Home() {
                       {torneo.date}
                     </span>
                   </div>
-
-                  {/* Name */}
                   <h3 className="text-white text-2xl" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
                     {torneo.name}
                   </h3>
-
-                  {/* Categories */}
                   <div className="flex flex-wrap gap-2">
                     {torneo.categories.map((cat) => (
                       <span key={cat} className="text-xs px-2 py-1 rounded"
@@ -324,20 +420,13 @@ export default function Home() {
                       </span>
                     ))}
                   </div>
-
-                  {/* Prize */}
                   <div className="pt-2 border-t" style={{ borderColor: "rgba(0,56,168,0.2)" }}>
                     <p className="text-xs leading-relaxed" style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
                       🏆 {torneo.prize}
                     </p>
                   </div>
-
-                  {/* CTA */}
                   {torneo.status === "inscripcion" && (
-                    <motion.a
-                      href="https://wa.me/message/TNQRBXWZJWAML1"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <motion.a href="https://wa.me/message/TNQRBXWZJWAML1" target="_blank" rel="noopener noreferrer"
                       className="mt-2 inline-flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold uppercase tracking-wider"
                       style={{ fontFamily: "var(--font-dm-sans)", backgroundColor: "#CCFF00", color: "#060e1c" }}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
@@ -349,7 +438,6 @@ export default function Home() {
             })}
           </div>
 
-          {/* Cómo inscribirse */}
           <motion.div className="rounded-2xl p-8 md:p-12 mb-16"
             style={{ backgroundColor: "#0d1e38", border: "1px solid rgba(0,56,168,0.25)" }}
             initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
@@ -376,13 +464,11 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* Resultados anteriores */}
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
             <h3 className="text-white text-2xl mb-6" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
               Resultados anteriores
             </h3>
             <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(0,56,168,0.25)" }}>
-              {/* Table header */}
               <div className="grid grid-cols-4 px-6 py-3"
                 style={{ backgroundColor: "rgba(0,56,168,0.2)", borderBottom: "1px solid rgba(0,56,168,0.25)" }}>
                 {["Torneo", "Campeón", "Subcampeón", "Fecha"].map((h) => (
@@ -454,13 +540,10 @@ export default function Home() {
 
       <Divider />
 
-      {/* ══════════════════════════════════════════
-          ── RESERVAS ──
-      ══════════════════════════════════════════ */}
+      {/* ── RESERVAS ── */}
       <section id="reservas" className="relative py-32 px-6 md:px-12 overflow-hidden" style={{ backgroundColor: "#0a1628" }}>
         <GridLines />
         <GlowYellow className="w-[500px] h-[500px] top-0 left-1/2 -translate-x-1/2" />
-
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-20 gap-6">
             <div>
@@ -468,32 +551,27 @@ export default function Home() {
               <motion.h2 className="text-6xl md:text-7xl leading-[1.0]"
                 style={{ fontFamily: "var(--font-playfair)", fontWeight: 800, color: "#FFFFFF" }}
                 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                Reserva tu<br /><em style={{ color: "#CCFF00" }}>pista.</em>
+                Reserva tu<br /><em style={{ color: "#CCFF00" }}>cancha.</em>
               </motion.h2>
             </div>
             <motion.p className="max-w-sm text-sm leading-relaxed md:text-right"
               style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn} custom={0.2}>
-              Reserva en segundos. Elige tu horario, pista y método de contacto. Sin complicaciones.
+              Reserva en segundos. Elige tu cancha, horario y turno. Sin complicaciones.
             </motion.p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-            {/* ── Tarifas + accesos rápidos ── */}
             <div className="flex flex-col gap-6">
-
-              {/* Tarifas */}
               <motion.div className="rounded-2xl overflow-hidden"
                 style={{ border: "1px solid rgba(0,56,168,0.25)" }}
                 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                <div className="px-8 py-5 flex items-center gap-3"
+                <div className="px-8 py-5"
                   style={{ backgroundColor: "rgba(0,56,168,0.2)", borderBottom: "1px solid rgba(0,56,168,0.25)" }}>
                   <span style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, color: "#FFFFFF", fontSize: "18px" }}>
                     Horarios y Tarifas
                   </span>
                 </div>
-
                 {tarifas.map((tarifa, i) => (
                   <div key={tarifa.id} className="px-8 py-6"
                     style={{ backgroundColor: i % 2 === 0 ? "#0d1e38" : "#0a1628", borderBottom: i < tarifas.length - 1 ? "1px solid rgba(0,56,168,0.15)" : "none" }}>
@@ -518,7 +596,6 @@ export default function Home() {
                     </div>
                   </div>
                 ))}
-
                 <div className="px-8 py-4" style={{ backgroundColor: "#0d1e38" }}>
                   <p className="text-xs italic" style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
                     * Todos tenemos un podium, el tuyo está aquí arriba.
@@ -526,13 +603,10 @@ export default function Home() {
                 </div>
               </motion.div>
 
-              {/* Accesos rápidos */}
               <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0.2}>
-
-                {/* WhatsApp */}
                 <a href="https://wa.me/message/TNQRBXWZJWAML1" target="_blank" rel="noopener noreferrer"
-                  className="rounded-2xl p-6 flex items-center gap-4 group transition-all duration-200"
+                  className="rounded-2xl p-6 flex items-center gap-4 transition-all duration-200"
                   style={{ backgroundColor: "#0d1e38", border: "1px solid rgba(0,56,168,0.25)" }}>
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: "rgba(37,211,102,0.15)", border: "1px solid rgba(37,211,102,0.3)" }}>
@@ -546,10 +620,8 @@ export default function Home() {
                     <p className="text-xs" style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>Reserva al instante</p>
                   </div>
                 </a>
-
-                {/* Instagram */}
                 <a href="https://www.instagram.com/clubpodiumocana" target="_blank" rel="noopener noreferrer"
-                  className="rounded-2xl p-6 flex items-center gap-4 group transition-all duration-200"
+                  className="rounded-2xl p-6 flex items-center gap-4 transition-all duration-200"
                   style={{ backgroundColor: "#0d1e38", border: "1px solid rgba(0,56,168,0.25)" }}>
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: "rgba(225,48,108,0.12)", border: "1px solid rgba(225,48,108,0.25)" }}>
@@ -567,11 +639,10 @@ export default function Home() {
               </motion.div>
             </div>
 
-            {/* ── Formulario ── */}
+            {/* Formulario */}
             <motion.div className="rounded-2xl p-8 md:p-10"
               style={{ backgroundColor: "#0d1e38", border: "1px solid rgba(0,56,168,0.25)" }}
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0.15}>
-
               <h3 className="text-white text-2xl mb-2" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
                 Enviar solicitud
               </h3>
@@ -599,89 +670,81 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  {/* Nombre */}
                   <div>
                     <label className="block text-xs uppercase tracking-widest mb-2"
                       style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
                       Nombre completo
                     </label>
-                    <input
-                      type="text"
-                      value={formData.nombre}
+                    <input type="text" value={formData.nombre}
                       onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                       placeholder="Tu nombre"
-                      className="w-full rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-all duration-200"
-                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.1)", border: "1px solid rgba(0,56,168,0.3)" }}
-                    />
+                      className="w-full rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none"
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.1)", border: "1px solid rgba(0,56,168,0.3)" }} />
                   </div>
-
-                  {/* Teléfono */}
                   <div>
                     <label className="block text-xs uppercase tracking-widest mb-2"
                       style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
                       Teléfono / WhatsApp
                     </label>
-                    <input
-                      type="tel"
-                      value={formData.telefono}
+                    <input type="tel" value={formData.telefono}
                       onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                       placeholder="Tu número"
-                      className="w-full rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-all duration-200"
-                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.1)", border: "1px solid rgba(0,56,168,0.3)" }}
-                    />
+                      className="w-full rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none"
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.1)", border: "1px solid rgba(0,56,168,0.3)" }} />
                   </div>
-
-                  {/* Fecha + Pista */}
                   <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest mb-2"
+                        style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
+                        Cancha
+                      </label>
+                      <select value={formData.cancha}
+                        onChange={(e) => setFormData({ ...formData, cancha: e.target.value })}
+                        className="w-full rounded-xl px-4 py-3 text-white outline-none"
+                        style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.15)", border: "1px solid rgba(0,56,168,0.3)", colorScheme: "dark" }}>
+                        <option value="">Seleccionar</option>
+                        <option value="Cancha 1">Cancha 1</option>
+                        <option value="Cancha 2">Cancha 2</option>
+                      </select>
+                    </div>
                     <div>
                       <label className="block text-xs uppercase tracking-widest mb-2"
                         style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
                         Fecha
                       </label>
-                      <input
-                        type="date"
-                        value={formData.fecha}
+                      <input type="date" value={formData.fecha}
                         onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
                         className="w-full rounded-xl px-4 py-3 text-white outline-none"
-                        style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.1)", border: "1px solid rgba(0,56,168,0.3)", colorScheme: "dark" }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs uppercase tracking-widest mb-2"
-                        style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
-                        Turno
-                      </label>
-                      <select
-                        value={formData.pista}
-                        onChange={(e) => setFormData({ ...formData, pista: e.target.value })}
-                        className="w-full rounded-xl px-4 py-3 text-white outline-none"
-                        style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.15)", border: "1px solid rgba(0,56,168,0.3)", colorScheme: "dark" }}>
-                        <option value="">Seleccionar</option>
-                        <option value="Day Match">Day Match</option>
-                        <option value="Night Match">Night Match</option>
-                      </select>
+                        style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.1)", border: "1px solid rgba(0,56,168,0.3)", colorScheme: "dark" }} />
                     </div>
                   </div>
-
-                  {/* Mensaje */}
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest mb-2"
+                      style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
+                      Turno
+                    </label>
+                    <select value={formData.turno}
+                      onChange={(e) => setFormData({ ...formData, turno: e.target.value })}
+                      className="w-full rounded-xl px-4 py-3 text-white outline-none"
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.15)", border: "1px solid rgba(0,56,168,0.3)", colorScheme: "dark" }}>
+                      <option value="">Seleccionar turno</option>
+                      <option value="Day Match (6:00 AM – 6:00 PM)">Day Match — 6:00 AM a 6:00 PM</option>
+                      <option value="Night Match (7:00 PM – 10:00 PM)">Night Match — 7:00 PM a 10:00 PM</option>
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-xs uppercase tracking-widest mb-2"
                       style={{ fontFamily: "var(--font-dm-sans)", color: "var(--color-muted)" }}>
                       Mensaje adicional (opcional)
                     </label>
-                    <textarea
-                      value={formData.mensaje}
+                    <textarea value={formData.mensaje}
                       onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
-                      placeholder="¿Alguna preferencia de pista o jugadores?"
+                      placeholder="¿Alguna preferencia o comentario?"
                       rows={3}
                       className="w-full rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none resize-none"
-                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.1)", border: "1px solid rgba(0,56,168,0.3)" }}
-                    />
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "14px", backgroundColor: "rgba(0,56,168,0.1)", border: "1px solid rgba(0,56,168,0.3)" }} />
                   </div>
-
-                  {/* Submit */}
-                  <motion.button
-                    onClick={handleSubmit}
+                  <motion.button onClick={handleSubmit}
                     className="w-full rounded-xl py-4 font-bold uppercase tracking-wider text-sm mt-2"
                     style={{ fontFamily: "var(--font-dm-sans)", backgroundColor: "#CCFF00", color: "#060e1c" }}
                     whileHover={{ scale: 1.02, backgroundColor: "#B8E600" }}

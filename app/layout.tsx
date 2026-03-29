@@ -20,12 +20,12 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Club Podium | El Pádel en su Máximo Nivel",
   description:
-    "Club de pádel premium con instalaciones profesionales. Reserva tu pista hoy y rankéate.",
+    "Club de pádel premium con instalaciones profesionales. Reserva tu cancha hoy y rankéate.",
   keywords: [
     "Club Podium",
     "padel Ocaña",
     "club de padel",
-    "pistas de padel",
+    "canchas de padel",
     "torneos padel",
     "padel premium",
     "padel Norte de Santander",
