@@ -18,21 +18,24 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "PadelPrime | El Padel en su Máximo Nivel",
+  title: "Club Podium | El Pádel en su Máximo Nivel",
   description:
-    "Club de pádel premium con instalaciones profesionales, entrenadores certificados y torneos. Reserva tu pista hoy en PadelPrime.",
+    "Club de pádel premium con instalaciones profesionales. Reserva tu pista hoy y rankéate.",
   keywords: [
-    "padel",
+    "Club Podium",
+    "padel Ocaña",
     "club de padel",
     "pistas de padel",
     "torneos padel",
     "padel premium",
+    "padel Norte de Santander",
   ],
   openGraph: {
-    title: "PadelPrime | El Padel en su Máximo Nivel",
+    title: "Club Podium | El Pádel en su Máximo Nivel",
     description:
-      "Club de pádel premium con instalaciones profesionales. Reserva tu pista hoy.",
+      "Club de pádel premium con instalaciones profesionales. Reserva tu pista hoy y rankéate.",
     type: "website",
+    url: "https://club-podium.netlify.app/",
   },
 };
 
