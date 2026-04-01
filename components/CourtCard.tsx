@@ -11,7 +11,6 @@ export function CourtCard({ court, index }: { court: Court; index: number }) {
     return (
         <motion.div
             className="relative rounded-2xl overflow-hidden flex flex-col"
-            style={{ backgroundColor: "#0d1e38", border: "1px solid rgba(0,56,168,0.25)" }}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-60px" }}
